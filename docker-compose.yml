@@ -17,3 +17,25 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  whatsapp-mcp:
+    build: .
+    container_name: whatsapp-mcp
+    restart: unless-stopped
+    env_file: .env
+    command: ["node", "src/mcp.js"]
+    environment:
+      MCP_TRANSPORT: http
+      MCP_PORT: "3333"
+    volumes:
+      - ./data:/app/data
+    # Bound to localhost on the droplet only. Reach it with an SSH tunnel.
+    ports:
+      - "127.0.0.1:3333:3333"
+    depends_on:
+      - whatsapp-bridge
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
