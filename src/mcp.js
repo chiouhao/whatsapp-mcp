@@ -141,8 +141,9 @@ if (mode === 'http') {
     });
   });
 
-  httpServer.listen(port, '127.0.0.1', () => {
-    console.log(`WhatsApp MCP listening on http://127.0.0.1:${port}/mcp`);
+  const host = process.env.MCP_HOST || '127.0.0.1';
+  httpServer.listen(port, host, () => {
+    console.log(`WhatsApp MCP listening on http://${host}:${port}/mcp`);
   });
 } else {
   const server = buildServer();
