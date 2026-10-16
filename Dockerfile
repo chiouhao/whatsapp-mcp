@@ -7,9 +7,8 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends git python3 make g++ \
  && rm -rf /var/lib/apt/lists/*
 
-RUN git config --system url."https://github.com/".insteadOf "ssh://git@github.com/" && git config --system url."https://github.com/".insteadOf "git@github.com:"
-
 COPY package.json ./
+COPY vendor ./vendor
 RUN npm install --omit=dev
 
 COPY src ./src
