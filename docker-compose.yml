@@ -1,0 +1,19 @@
+services:
+  whatsapp-bridge:
+    build: .
+    container_name: whatsapp-bridge
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    # Interactive first run to scan the QR code:
+    #   docker compose run --rm whatsapp-bridge
+    # Then start detached:
+    #   docker compose up -d whatsapp-bridge
+    stdin_open: true
+    tty: true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
