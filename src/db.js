@@ -43,6 +43,18 @@ export function openDb(path = process.env.DB_PATH || './data/messages.db') {
     );
   `);
 
+  // One-time-safe repairs, run on every start (idempotent).
+  // Drop empty rows and fill chat names from the most recent incoming sender name.
+  db.exec(`
+    DELETE FROM messages WHERE body IS NULL;
+    UPDATE chats SET name = (
+      SELECT m.sender_name FROM messages m
+      WHERE m.chat_jid = chats.jid AND m.from_me = 0 AND m.sender_name IS NOT NULL
+      ORDER BY m.timestamp DESC LIMIT 1
+    )
+    WHERE name IS NULL;
+  `);
+
   return {
     raw: db,
 

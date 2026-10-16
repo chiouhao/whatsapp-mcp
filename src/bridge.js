@@ -74,14 +74,21 @@ async function start() {
     for (const msg of messages) {
       if (!msg.message || msg.key.remoteJid === 'status@broadcast') continue;
 
+      // Skip protocol/system messages (reactions, receipts, key exchange) that have no text.
+      const body = extractBody(msg);
+      if (body === null) continue;
+
       const chatJid = msg.key.remoteJid;
+      const isGroup = chatJid.endsWith('@g.us');
       db.insertMessage({
         id: msg.key.id,
         chatJid,
+        // For 1:1 chats, the incoming sender's push name is the contact's name.
+        chatName: !isGroup && !msg.key.fromMe ? msg.pushName ?? undefined : undefined,
         sender: msg.key.participant || chatJid,
         senderName: msg.pushName ?? null,
         fromMe: msg.key.fromMe,
-        body: extractBody(msg),
+        body,
         timestamp: Number(msg.messageTimestamp) * 1000,
       });
     }
@@ -92,6 +99,16 @@ async function start() {
       db.upsertChat({ jid: c.id, name: c.name, isGroup: c.id.endsWith('@g.us') });
     }
   });
+
+  // Contact names arrive here, including for @lid contacts that have no phone number.
+  const onContacts = (contacts) => {
+    for (const c of contacts) {
+      const name = c.name || c.notify;
+      if (name) db.upsertChat({ jid: c.id, name, isGroup: c.id.endsWith('@g.us') });
+    }
+  };
+  sock.ev.on('contacts.upsert', onContacts);
+  sock.ev.on('contacts.update', onContacts);
 }
 
 start().catch((err) => {
