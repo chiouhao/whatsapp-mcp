@@ -113,18 +113,20 @@ if (mode === 'http') {
   if (!token) throw new Error('MCP_AUTH_TOKEN must be set for http mode');
 
   const httpServer = createServer((req, res) => {
-    if (req.url !== '/mcp' || req.method !== 'POST') {
-      res.writeHead(404).end();
-      return;
-    }
-    if (req.headers.authorization !== `Bearer ${token}`) {
-      res.writeHead(401).end();
-      return;
-    }
-
+    // Always consume the request body before replying. Replying early leaves
+    // unread data on the socket, which makes nginx log "connection reset".
     let raw = '';
     req.on('data', (chunk) => { raw += chunk; });
     req.on('end', async () => {
+      if (req.url !== '/mcp' || req.method !== 'POST') {
+        res.writeHead(404).end();
+        return;
+      }
+      if (req.headers.authorization !== `Bearer ${token}`) {
+        res.writeHead(401).end();
+        return;
+      }
+
       const server = buildServer();
       const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
       res.on('close', () => {
