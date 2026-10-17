@@ -85,23 +85,6 @@ function buildServer() {
     },
   );
 
-  server.tool(
-    'list_open_tasks',
-    'List open Todoist tasks that were created from WhatsApp (label "whatsapp").',
-    {},
-    async () => fmt(await todoist.listTasks({ filter: '@whatsapp' })),
-  );
-
-  server.tool(
-    'complete_task',
-    'Mark a Todoist task as done by its Todoist id.',
-    { todoist_id: z.string() },
-    async ({ todoist_id }) => {
-      await todoist.completeTask(todoist_id);
-      return fmt({ completed: todoist_id });
-    },
-  );
-
   return server;
 }
 

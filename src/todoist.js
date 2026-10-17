@@ -35,11 +35,3 @@ export async function createTask({ content, description, dueString, projectId, l
   });
 }
 
-export async function listTasks({ filter } = {}) {
-  const q = filter ? `?filter=${encodeURIComponent(filter)}` : '';
-  return call('GET', `/tasks${q}`);
-}
-
-export async function completeTask(taskId) {
-  return call('POST', `/tasks/${taskId}/close`);
-}
