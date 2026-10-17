@@ -1,4 +1,4 @@
-// MCP server exposing the WhatsApp store and Todoist task creation to Claude.
+// MCP server exposing the WhatsApp message store to Claude.
 //
 // MCP_TRANSPORT=stdio (default): for a client running on the same machine.
 // MCP_TRANSPORT=http: serves POST /mcp on MCP_PORT (default 3333), bound to
@@ -10,7 +10,6 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 import { openDb } from './db.js';
-import * as todoist from './todoist.js';
 
 const db = openDb();
 
@@ -56,34 +55,6 @@ function buildServer() {
     async ({ hours, limit }) => fmt(db.unanswered({ hours, limit })),
   );
 
-  server.tool(
-    'create_task',
-    'Create a Todoist task from a WhatsApp message or commitment. Confirm the title with the user before calling.',
-    {
-      title: z.string().min(3),
-      description: z.string().optional(),
-      due_string: z.string().optional().describe('Natural language due date, e.g. "tomorrow 5pm"'),
-      source_chat_jid: z.string().optional(),
-      source_message_id: z.string().optional(),
-    },
-    async ({ title, description, due_string, source_chat_jid, source_message_id }) => {
-      const task = await todoist.createTask({
-        content: title,
-        description: [description, source_chat_jid ? `WhatsApp: ${source_chat_jid}` : null]
-          .filter(Boolean)
-          .join('\n') || undefined,
-        dueString: due_string,
-        labels: ['whatsapp'],
-      });
-      const localId = db.addTask({
-        sourceJid: source_chat_jid,
-        sourceMsg: source_message_id,
-        title,
-        todoistId: task.id,
-      });
-      return fmt({ local_id: localId, todoist_id: task.id, url: task.url });
-    },
-  );
 
   return server;
 }
